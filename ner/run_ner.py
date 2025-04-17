@@ -664,7 +664,7 @@ default_training_args = {
     "fp16": True,
     "load_best_model_at_end": True,
     "metric_for_best_model": "micro_f1",
-    "num_train_epochs": 10,
+    "num_train_epochs": 30,
     "overwrite_output_dir": True,
     "per_device_eval_batch_size": 32,
     "return_entity_level_metrics": True,
