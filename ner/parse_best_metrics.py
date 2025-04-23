@@ -56,6 +56,7 @@ def parse_predict_metrics(base_dir, print_results=False):
         for result in results:
             print(f"Model: {result['model_name']}, Dataset: {result['dataset_name']}, "
                   f"Metrics: {', '.join([f'{k}: {v}' for k, v in result.items() if k not in ['model_name', 'dataset_name']])}")
+        print(f"Total experiments: {len(results)}")
     else:
         # Ensure the 'csv' directory exists
         output_dir = os.path.join(base_dir, "csv")
