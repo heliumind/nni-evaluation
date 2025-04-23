@@ -27,8 +27,9 @@ from typing import List, Optional
 import datasets
 import evaluate
 import numpy as np
-from datasets import Value, load_dataset
+from datasets import Value, load_dataset, load_from_disk
 from sklearn.metrics import classification_report
+import nni
 
 import transformers
 from transformers import (
@@ -40,6 +41,7 @@ from transformers import (
     HfArgumentParser,
     Trainer,
     TrainingArguments,
+    TrainerCallback,
     default_data_collator,
     set_seed,
 )
@@ -139,7 +141,7 @@ class DataTrainingArguments:
         default=False, metadata={"help": "Overwrite the cached preprocessed datasets or not."}
     )
     pad_to_max_length: bool = field(
-        default=True,
+        default=False,
         metadata={
             "help": (
                 "Whether to pad all samples to `max_seq_length`. "
@@ -180,7 +182,7 @@ class DataTrainingArguments:
             )
         },
     )
-    metric_name: Optional[str] = field(default=None, metadata={"help": "The metric to use for evaluation."})
+    metric_name: Optional[str] = field(default="accuracy", metadata={"help": "The metric to use for evaluation."})
     train_file: Optional[str] = field(
         default=None, metadata={"help": "A csv or a json file containing the training data."}
     )
@@ -272,25 +274,32 @@ def get_label_list(raw_dataset, split="train") -> List[str]:
     label_list = [str(label) for label in label_list]
     return label_list
 
+class SendMetrics(TrainerCallback):
+    '''
+    transformers callback to send metrics to NNI framework
+    '''
+    def on_evaluate(self, args, state, control, metrics, **kwargs):
+        '''
+        Run on end of each epoch
+        '''
+        nni.report_intermediate_result(metrics['eval_weighted_f1'])
+    def on_predict(self, args, state, control, metrics, **kwargs):
+        '''
+        Run on end of prediction
+        '''
+        nni.report_final_result(metrics['predict_weighted_f1'])
 
-def main():
-    # See all possible arguments in src/transformers/training_args.py
-    # or by passing the --help flag to this script.
-    # We now keep distinct sets of args, for a cleaner separation of concerns.
-
-    parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
-    if len(sys.argv) == 2 and sys.argv[1].endswith(".json"):
-        # If we pass only one argument to the script and it's the path to a json file,
-        # let's parse it to get our arguments.
-        model_args, data_args, training_args = parser.parse_json_file(json_file=os.path.abspath(sys.argv[1]))
-    else:
-        model_args, data_args, training_args = parser.parse_args_into_dataclasses()
-
-    if model_args.use_auth_token is not None:
-        warnings.warn("The `use_auth_token` argument is deprecated and will be removed in v4.34.", FutureWarning)
-        if model_args.token is not None:
-            raise ValueError("`token` and `use_auth_token` are both specified. Please set only the argument `token`.")
-        model_args.token = model_args.use_auth_token
+def main(model_args, data_args, training_args):
+    
+    if (
+        os.path.exists(training_args.output_dir)
+        and os.listdir(training_args.output_dir)
+        and training_args.do_train
+        and not training_args.overwrite_output_dir
+    ):
+        raise ValueError(
+            f"Output directory ({training_args.output_dir}) already exists and is not empty. Use --overwrite_output_dir to overcome."
+        )
 
     # Setup logging
     logging.basicConfig(
@@ -342,13 +351,9 @@ def main():
     # In distributed training, the load_dataset function guarantee that only one local process can concurrently
     # download the dataset.
     if data_args.dataset_name is not None:
-        # Downloading and loading a dataset from the hub.
-        raw_datasets = load_dataset(
+        # Loading a dataset from diskb.
+        raw_datasets = load_from_disk(
             data_args.dataset_name,
-            data_args.dataset_config_name,
-            cache_dir=model_args.cache_dir,
-            token=model_args.token,
-            trust_remote_code=model_args.trust_remote_code
         )
         # Try print some info about the dataset
         logger.info(f"Dataset loaded: {raw_datasets}")
@@ -680,6 +685,7 @@ def main():
                         final_result[f"{key}_{n}"] = v
                 else:
                     final_result[key] = value
+            final_result |= metric.compute(predictions=preds, references=p.label_ids)
             return final_result
         else:
             preds = np.argmax(preds, axis=1)
@@ -774,5 +780,43 @@ def main():
     else:
         trainer.create_model_card(**kwargs)
 
+# TrainingArguments
+default_training_args = {
+    "do_eval": True,
+    "do_predict": True,
+    "do_train": True,
+    "eval_strategy": "epoch",
+    "fp16": True,
+    "load_best_model_at_end": True,
+    "max_seq_length": 512,
+    "metric_for_best_model": "weighted_f1",
+    "num_train_epochs": 30,
+    "overwrite_output_dir": True,
+    "per_device_eval_batch_size": 32,
+    "save_strategy": "epoch",
+    "save_total_limit": 1,
+    "seed": 1,
+    "warmup_ratio": 0.1
+}
+
 if __name__ == "__main__":
-    main()
+    try:
+        print("***** Task starting *****")
+        parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
+        tuner_params = nni.get_next_parameter()
+        trial_dir = os.path.join("trials", str(nni.get_trial_id()))
+        if not os.path.exists(trial_dir):
+            os.makedirs(trial_dir)
+        tuner_params["output_dir"] = trial_dir
+        tuner_params = tuner_params | default_training_args
+        logger.debug(tuner_params)
+
+        print("*****Got tuning parameters from nni *****")
+
+        model_args, data_args, training_args = parser.parse_dict(tuner_params)
+        print("***** Parsed tuning parameter from nni *****")
+
+        main(model_args, data_args, training_args)
+    except Exception as exception:
+        logger.exception(exception)
+        raise
