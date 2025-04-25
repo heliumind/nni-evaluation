@@ -712,6 +712,7 @@ def main(model_args, data_args, training_args):
         compute_metrics=compute_metrics,
         tokenizer=tokenizer,
         data_collator=data_collator,
+        callbacks=[SendMetrics()],
     )
 
     # Training
