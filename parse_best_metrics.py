@@ -1,6 +1,7 @@
 import os
 import re
 import pandas as pd
+import argparse
 
 def parse_predict_metrics(base_dir, print_results=False):
     results = []
@@ -25,8 +26,17 @@ def parse_predict_metrics(base_dir, print_results=False):
                         "predict_weighted_f1": None,
                         "predict_weighted_precision": None,
                         "predict_weighted_recall": None,
-                        "predict_overall_accuracy": None
                     }
+
+                    # Adjust accuracy metric name based on the task
+                    if "ner" in base_dir:
+                        metrics.update({
+                            "predict_overall_accuracy": None,
+                        })
+                    else:
+                        metrics.update({
+                            "predict_accuracy": None,
+                        })
 
                     # Read the log file
                     with open(file_path, "r") as f:
@@ -68,11 +78,10 @@ def parse_predict_metrics(base_dir, print_results=False):
         print(f"Results saved to {output_file}")
 
 if __name__ == "__main__":
-    import argparse
-
     parser = argparse.ArgumentParser(description="Parse predict metrics from trial.log files.")
+    parser.add_argument("base_dir", type=str, help="Path to directory to search for results.csv files.")
     parser.add_argument("--print", action="store_true", help="Print the results instead of saving to a CSV file.")
     args = parser.parse_args()
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.abspath(os.path.expanduser(args.base_dir))
     parse_predict_metrics(base_dir, print_results=args.print)

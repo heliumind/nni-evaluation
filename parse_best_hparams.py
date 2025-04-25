@@ -54,8 +54,9 @@ def parse_best_hyperparams(base_dir, print_results=False):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse best hyperparameters from results.csv files.")
+    parser.add_argument("base_dir", type=str, help="Path to directory to search for results.csv files.")
     parser.add_argument("--print", action="store_true", help="Print the results instead of saving to a CSV file.")
     args = parser.parse_args()
 
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = os.path.abspath(os.path.expanduser(args.base_dir))
     parse_best_hyperparams(base_dir, print_results=args.print)
