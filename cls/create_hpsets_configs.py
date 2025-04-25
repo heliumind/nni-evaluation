@@ -5,11 +5,8 @@ import json
 CUDA_VISIBLE_DEVICES = 2
 
 models = {
-    "christbert_best": "/home/data/models/ChristBERT/hf/model/best",
     "christbert_last": "/home/data/models/ChristBERT/hf/model/last",
-    "christbert_scratch_best": "/home/data/models/ChristBERT/hf/scratch/best",
     "christbert_scratch_last": "/home/data/models/ChristBERT/hf/scratch/last",
-    "christbert_scratch_bpe_best": "/home/data/models/ChristBERT/hf/scratch_bpe/best",
     "christbert_scratch_bpe_last": "/home/data/models/ChristBERT/hf/scratch_bpe/last",
     "medbertde": "GerMedBERT/medbert-512",
     "biogottbert": "SCAI-BIO/bio-gottbert-base",
@@ -24,7 +21,6 @@ datasets = {
 # First run: Create hpset JSON files
 for model_name, model_path in models.items():
     for dataset_name, dataset_path in datasets.items():
-        max_seq_length = 128 if dataset_name == "ggponc2" else 64
         hpset = {
             "model_name_or_path": {"_type": "choice", "_value": [f"{model_path}"]},
             "dataset_name": {"_type": "choice", "_value": [f"{dataset_path}"]},
@@ -47,7 +43,7 @@ searchSpaceFile: hpset_{model_name}_{dataset_name}.json
 trialCommand: python run_classification.py
 trialCodeDirectory: ../../../
 trialGpuNumber: 1
-trialConcurrency: {CUDA_VISIBLE_DEVICES}
+trialConcurrency: 2
 tuner:
   name: GridSearch
   classArgs:
