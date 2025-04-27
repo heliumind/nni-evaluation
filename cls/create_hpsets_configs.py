@@ -16,6 +16,7 @@ models = {
 
 datasets = {
     "clef": "/home/data/eval/clef",
+    "jsyncc": "/home/data/eval/jsyncc",
 }
 
 # First run: Create hpset JSON files
