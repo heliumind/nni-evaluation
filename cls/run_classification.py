@@ -282,12 +282,12 @@ class SendMetrics(TrainerCallback):
         '''
         Run on end of each epoch
         '''
-        nni.report_intermediate_result(metrics['eval_weighted_f1'])
+        nni.report_intermediate_result(metrics['eval_macro_f1'])
     def on_predict(self, args, state, control, metrics, **kwargs):
         '''
         Run on end of prediction
         '''
-        nni.report_final_result(metrics['predict_weighted_f1'])
+        nni.report_final_result(metrics['predict_macro_f1'])
 
 def main(model_args, data_args, training_args):
     
@@ -790,7 +790,7 @@ default_training_args = {
     "fp16": True,
     "load_best_model_at_end": True,
     "max_seq_length": 512,
-    "metric_for_best_model": "weighted_f1",
+    "metric_for_best_model": "macro_f1",
     "num_train_epochs": 30,
     "overwrite_output_dir": True,
     "per_device_eval_batch_size": 32,
