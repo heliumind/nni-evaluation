@@ -114,7 +114,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse predict metrics from trial.log files.")
     parser.add_argument("base_dir", type=str, help="Path to directory to search for results.csv files.")
     parser.add_argument("--nni_dir", type=str, default="~/nni-experiments", help="Optional path to NNI directory.")
-    parser.add_argument("--metric", type=str, default="predict_micro_f1", help="Metric to optimize.")
+    parser.add_argument("--metric", type=str, default="eval_micro_f1", help="Metric to optimize.")
     parser.add_argument("--print", action="store_true", help="Print the results instead of saving to a CSV file.")
     args = parser.parse_args()
 

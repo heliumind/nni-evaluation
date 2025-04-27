@@ -37,26 +37,28 @@ def parse_results(base_dir, nni_dir):
                     # Initialize variables
                     learning_rate = None
                     batch_size = None
-                    metrics = {
-                        "predict_macro_f1": None,
-                        "predict_macro_precision": None,
-                        "predict_macro_recall": None,
-                        "predict_micro_f1": None,
-                        "predict_micro_precision": None,
-                        "predict_micro_recall": None,
-                        "predict_weighted_f1": None,
-                        "predict_weighted_precision": None,
-                        "predict_weighted_recall": None,
-                    }
-                    # Adjust accuracy metric name based on the task
-                    if "ner" in base_dir:
-                        metrics.update({
-                            "predict_overall_accuracy": None,
+                    metrics = {}
+                    for mode in ["eval", "predict"]:
+                        metrics.update({ 
+                            f"{mode}_macro_f1": None,
+                            f"{mode}_macro_precision": None,
+                            f"{mode}_macro_recall": None,
+                            f"{mode}_micro_f1": None,
+                            f"{mode}_micro_precision": None,
+                            f"{mode}_micro_recall": None,
+                            f"{mode}_weighted_f1": None,
+                            f"{mode}_weighted_precision": None,
+                            f"{mode}_weighted_recall": None,
                         })
-                    else:
-                        metrics.update({
-                            "predict_accuracy": None,
-                        })
+                        # Adjust accuracy metric name based on the task
+                        if "ner" in base_dir:
+                            metrics.update({
+                                f"{mode}_overall_accuracy": None,
+                            })
+                        else:
+                            metrics.update({
+                                f"{mode}_accuracy": None,
+                            })
 
                     try:
                         with open(trial_log_path, "r") as trial_log:

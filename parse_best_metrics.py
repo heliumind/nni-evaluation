@@ -62,7 +62,16 @@ def parse_predict_metrics(base_dir, metric, print_results=False):
     if print_results:
         for result in results:
             print(f"Model: {result['model_name']}, Dataset: {result['dataset_name']}, "
-                  f"Learning Rate: {result['learning_rate']}, Batch Size: {result['batch_size']}")
+                  f"Predict Macro F1: {result['predict_macro_f1']}, "
+                  f"Predict Macro Precision: {result['predict_macro_precision']}, "
+                  f"Predict Macro Recall: {result['predict_macro_recall']}, "
+                  f"Predict Micro F1: {result['predict_micro_f1']}, "
+                  f"Predict Micro Precision: {result['predict_micro_precision']}, "
+                  f"Predict Micro Recall: {result['predict_micro_recall']}, "
+                  f"Predict Weighted F1: {result['predict_weighted_f1']}, "
+                  f"Predict Weighted Precision: {result['predict_weighted_precision']}, "
+                  f"Predict Weighted Recall: {result['predict_weighted_recall']}, "
+                  f"Predict Accuracy: {result.get('predict_accuracy', result.get('predict_overall_accuracy'))}")
         print(f"Total experiments: {len(results)}")
     else:
         # Ensure the 'csv' directory exists
@@ -77,7 +86,7 @@ def parse_predict_metrics(base_dir, metric, print_results=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse predict metrics from results.csv files.")
     parser.add_argument("base_dir", type=str, help="Path to directory to search for results.csv files.")
-    parser.add_argument("--metric", type=str, default="predict_micro_f1", help="Metric to optimize.")
+    parser.add_argument("--metric", type=str, default="eval_micro_f1", help="Metric to optimize.")
     parser.add_argument("--print", action="store_true", help="Print the results instead of saving to a CSV file.")
     args = parser.parse_args()
 
