@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import argparse
 
-def parse_best_hyperparams(base_dir, print_results=False):
+def parse_best_hyperparams(base_dir, metric, print_results=False):
     results = []
 
     # Walk through the directory structure
@@ -18,13 +18,13 @@ def parse_best_hyperparams(base_dir, print_results=False):
                     df = pd.read_csv(file_path)
 
                     # Find the row with the highest reward
-                    best_row = df.loc[df['reward'].idxmax()]
+                    best_row = df.loc[df[metric].idxmax()]
 
                     # Extract relevant information
                     model_name = os.path.basename(os.path.dirname(root))
                     dataset_name = os.path.basename(root)
                     learning_rate = best_row['learning_rate']
-                    batch_size = best_row['per_device_train_batch_size']
+                    batch_size = best_row['batch_size']
 
                     # Append to results
                     results.append({
@@ -55,8 +55,9 @@ def parse_best_hyperparams(base_dir, print_results=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse best hyperparameters from results.csv files.")
     parser.add_argument("base_dir", type=str, help="Path to directory to search for results.csv files.")
+    parser.add_argument("--metric", type=str, default="predict_micro_f1", help="Metric to optimize.")
     parser.add_argument("--print", action="store_true", help="Print the results instead of saving to a CSV file.")
     args = parser.parse_args()
 
     base_dir = os.path.abspath(os.path.expanduser(args.base_dir))
-    parse_best_hyperparams(base_dir, print_results=args.print)
+    parse_best_hyperparams(base_dir, args.metric, print_results=args.print)

@@ -4,12 +4,13 @@ import pandas as pd
 import argparse
 from datetime import timedelta
 
-def parse_runtime(base_dir, nni_dir, print_results=False):
+def parse_runtime(base_dir, metric, nni_dir, print_results=False):
     results = []
 
     # Walk through the directory structure
     for root, _, files in os.walk(base_dir):
         for file in files:
+            experiment_id = None
             if file == "experiment_id.txt":
                 file_path = os.path.join(root, file)
                 if not os.path.exists(file_path):
@@ -46,19 +47,23 @@ def parse_runtime(base_dir, nni_dir, print_results=False):
                     except Exception as e:
                         print(f"Error reading trial log {trial_log_path}: {e}")
                         continue
-                
-            if file == "trial.log":
-                file_path = os.path.join(root, file)
+
+                file_path = os.path.join(root, "results.csv")
                 if not os.path.exists(file_path):
                     continue  # Skip if the file does not exist
 
                 try:
+                    df = pd.read_csv(file_path)
+                    best_row = df.loc[df[metric].idxmax()]
+                    trial_id = best_row['trialJobId']
+                    trial_log_path = os.path.join(nni_dir, experiment_id, "environments", "local-env", "trials", trial_id, "trial.log")
+
                     # Initialize variables
                     train_runtime = None
                     predict_runtime = None
 
                     # Read the log file
-                    with open(file_path, "r") as f:
+                    with open(trial_log_path, "r") as f:
                         for line in f:
                             # Extract train_runtime
                             if "train_runtime" in line:
@@ -109,9 +114,10 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Parse predict metrics from trial.log files.")
     parser.add_argument("base_dir", type=str, help="Path to directory to search for results.csv files.")
     parser.add_argument("--nni_dir", type=str, default="~/nni-experiments", help="Optional path to NNI directory.")
+    parser.add_argument("--metric", type=str, default="predict_micro_f1", help="Metric to optimize.")
     parser.add_argument("--print", action="store_true", help="Print the results instead of saving to a CSV file.")
     args = parser.parse_args()
 
     base_dir = os.path.abspath(os.path.expanduser(args.base_dir))
     nni_dir = os.path.abspath(os.path.expanduser(args.nni_dir))
-    parse_runtime(base_dir, nni_dir=nni_dir, print_results=args.print)
+    parse_runtime(base_dir, args.metric, nni_dir=nni_dir, print_results=args.print)
