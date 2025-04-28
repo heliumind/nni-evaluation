@@ -72,6 +72,20 @@ def parse_results(base_dir, nni_dir):
                                         match = re.search(rf"{metric}\s+=\s+([\d.]+)", line)
                                         if match:
                                             metrics[metric] = float(match.group(1))
+                                
+                                # Parse entity-specific metrics
+                                entity_metric_match = re.search(r"predict_([a-zA-Z_)]+)_(f1|precision|recall)\s+=\s+([\d.]+)", line)
+                                if entity_metric_match:
+                                    entity = entity_metric_match.group(1)
+                                    metric_type = entity_metric_match.group(2)
+                                    value = float(entity_metric_match.group(3))
+                                    
+                                    # Create the metric key in the format predict_ENTITY_metric
+                                    entity_metric_key = f"predict_{entity}_{metric_type}"
+                                    
+                                    # Add to metrics dictionary if not already there
+                                    if entity_metric_key not in metrics:
+                                        metrics[entity_metric_key] = value
 
                     except Exception as e:
                         print(f"Error reading trial log {trial_log_path}: {e}")
