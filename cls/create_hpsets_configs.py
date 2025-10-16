@@ -5,18 +5,18 @@ import json
 CUDA_VISIBLE_DEVICES = 2
 
 models = {
-    "christbert_last": "/home/data/models/ChristBERT/hf/model/last",
-    "christbert_scratch_last": "/home/data/models/ChristBERT/hf/scratch/last",
-    "christbert_scratch_bpe_last": "/home/data/models/ChristBERT/hf/scratch_bpe/last",
+    "christbert": "ChristBERT/ChristBERT_base",
+    "christbert_scratch": "ChristBERT/ChristBERT_scratch_base",
+    "christbert_bpe": "ChristBERT/ChristBERT_bpe_base",
     "medbertde": "GerMedBERT/medbert-512",
     "biogottbert": "SCAI-BIO/bio-gottbert-base",
-    "geistbert": "/home/data/models/GeistBERT",
+    "geistbert": "GeistBERT/GeistBERT_base",
     "geberta": "ikim-uk-essen/geberta-base"
 }
 
 datasets = {
-    "clef": "/home/data/eval/clef",
-    "jsyncc": "/home/data/eval/jsyncc",
+    "clef": "/dir/to/clef",
+    "jsyncc": "/dir/to/jsyncc",
 }
 
 # First run: Create hpset JSON files
